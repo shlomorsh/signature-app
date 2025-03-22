@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כלי ליחיעם - הוספת חתימה לתמונות</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, button, select {
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 15px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .preview-area {
+            margin-top: 20px;
+        }
+        
+        .image-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .preview-item {
+            position: relative;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            padding: 5px;
+            width: calc(33.333% - 10px);
+            min-width: 200px;
+        }
+        
+        .preview-item canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .download-btn {
+            margin-top: 5px;
+            width: 100%;
+            background-color: #27ae60;
+        }
+        
+        .download-btn:hover {
+            background-color: #219653;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        #dragArea {
+            border: 2px dashed #3498db;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+        }
+        
+        #dragArea.highlight {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .positioning-preview {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAA8SURBVHjaYvz//z8DJYCJgUIw8AawUMNlTGQEtOO/pGVCMgwY4Vy8LmCkxAWDxQC8XqCKF+jugtEwACvUWAoUZdEYAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDEzLTA1LTAzVDA5OjM3OjEwKzAwOjAw7+7qVQAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxMy0wNS0wM1QwOTozNzoxMCswMDowMJ6zUukAAAAASUVORK5CYII=');
+        }
+        
+        .draggable-signature {
+            position: absolute;
+            cursor: move;
+            transform: translate(-50%, -50%);
+            border: 2px dashed #3498db;
+            padding: 2px;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .position-info {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .position-values {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status-message {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        
+        /* מודל הסבר */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+        
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">יחיעם הסתום</div>
+        <h1>הוספת חתימה לתמונות</h1>
+        
+        <div class="upload-section">
+            <h2>1. העלאת תמונות</h2>
+            <div id="dragArea">גרור לכאן תמונות או לחץ כדי לבחור</div>
+            <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+            <button id="uploadBtn">בחר תמונות</button>
+            <div id="imageCounter"></div>
+        </div>
+        
+        <div class="upload-section">
+            <h2>2. העלאת חתימה (עם רקע שקוף)</h2>
+            <input type="file" id="signatureUpload" accept="image/png,image/gif">
+        </div>
+        
+        <div class="upload-section">
+            <h2>3. קביעת גודל ומיקום החתימה</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="signatureSize">גודל החתימה (%):</label>
+                    <input type="range" id="signatureSize" min="5" max="50" value="20">
+                    <span id="sizeValue">20%</span>
+                </div>
+            </div>
+            
+            <div>
+                <p>גרור את החתימה למיקום הרצוי:</p>
+                <div id="positioningPreview" class="positioning-preview">
+                    <!-- החתימה תופיע כאן -->
+                </div>
+                <div class="position-info">
+                    מיקום נוכחי: <span id="positionValues" class="position-values">50% אופקי, 50% אנכי</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <button id="applyBtn" disabled>החל חתימה על התמונות</button>
+            </div>
+            <div class="control-group">
+                <button id="downloadAllBtn" style="display: none;">הורד את כל התמונות</button>
+            </div>
+        </div>
+        
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
+        </div>
+        
+        <div id="statusMessage" class="status-message"></div>
+        
+        <div class="preview-area">
+            <h2>תצוגה מקדימה</h2>
+            <div class="image-preview" id="previewContainer"></div>
+        </div>
+    </div>
+    
+    <!-- מודל הסבר -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModal">&times;</span>
+            <h2>יש לאפשר חלונות קופצים (Pop-ups)</h2>
+            <p>כדי שהורדת התמונות תעבוד, יש לאפשר חלונות קופצים בדפדפן.</p>
+            <p>אם אתה רואה הודעה בדפדפן שחלונות קופצים נחסמו, לחץ על האייקון שמופיע בשורת הכתובת ובחר "לאפשר חלונות קופצים מאתר זה".</p>
+            <button id="confirmModal">הבנתי</button>
+        </div>
+    </div>
+    
+    <script>
+        // מחזיקי הנתונים
+        let uploadedImages = [];
+        let signatureImage = null;
+        let processedImages = [];
+        let signaturePosition = { x: 50, y: 50 }; // אחוזים
+        
+        // קבלת הרפרנסים לאלמנטים
+        const dragArea = document.getElementById('dragArea');
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const signatureUpload = document.getElementById('signatureUpload');
+        const signatureSize = document.getElementById('signatureSize');
+        const sizeValue = document.getElementById('sizeValue');
+        const applyBtn = document.getElementById('applyBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const positioningPreview = document.getElementById('positioningPreview');
+        const positionValues = document.getElementById('positionValues');
+        const imageCounter = document.getElementById('imageCounter');
+        const progressBar = document.getElementById('progressBar');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const statusMessage = document.getElementById('statusMessage');
+        const infoModal = document.getElementById('infoModal');
+        const closeModal = document.getElementById('closeModal');
+        const confirmModal = document.getElementById('confirmModal');
+        
+        // סגירת המודל
+        closeModal.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+        
+        confirmModal.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+        
+        // הצגת מודל ההסבר בטעינת הדף
+        window.addEventListener('load', () => {
+            infoModal.style.display = 'flex';
+        });
+        
+        // עדכון ערך הגודל בזמן הזזת המחוון
+        signatureSize.addEventListener('input', () => {
+            sizeValue.textContent = signatureSize.value + '%';
+            updateSignaturePreview();
+        });
+        
+        // טיפול בלחיצה על כפתור העלאת תמונות
+        uploadBtn.addEventListener('click', () => {
+            imageUpload.click();
+        });
+        
+        // טיפול באירוע דראג אנד דרופ
+        dragArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragArea.classList.add('highlight');
+        });
+        
+        dragArea.addEventListener('dragleave', () => {
+            dragArea.classList.remove('highlight');
+        });
+        
+        dragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragArea.classList.remove('highlight');
+            handleImageFiles(e.dataTransfer.files);
+        });
+        
+        dragArea.addEventListener('click', () => {
+            imageUpload.click();
+        });
+        
+        // טיפול בשינוי קבצי תמונה
+        imageUpload.addEventListener('change', () => {
+            handleImageFiles(imageUpload.files);
+        });
+        
+        // טיפול בשינוי קובץ חתימה
+        signatureUpload.addEventListener('change', () => {
+            const file = signatureUpload.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        signatureImage = img;
+                        updateApplyButton();
+                        setupSignaturePreview();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // הגדרת אזור הגרירה לחתימה
+        function setupSignaturePreview() {
+            // נקה את אזור התצוגה המקדימה
+            positioningPreview.innerHTML = '';
+            
+            if (signatureImage) {
+                // יצירת אלמנט החתימה הניתן לגרירה
+                const sigPreview = document.createElement('img');
+                sigPreview.src = signatureImage.src;
+                sigPreview.className = 'draggable-signature';
+                sigPreview.style.maxWidth = signatureSize.value + '%';
+                sigPreview.style.maxHeight = '80%';
+                
+                // מיקום התחלתי
+                sigPreview.style.left = signaturePosition.x + '%';
+                sigPreview.style.top = signaturePosition.y + '%';
+                
+                positioningPreview.appendChild(sigPreview);
+                
+                // הגדרת אירועי גרירה
+                let isDragging = false;
+                let offsetX, offsetY;
+                
+                sigPreview.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    
+                    // חישוב ההיסט (מיקום הלחיצה יחסית לאלמנט)
+                    const rect = sigPreview.getBoundingClientRect();
+                    offsetX = e.clientX - rect.left;
+                    offsetY = e.clientY - rect.top;
+                    
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const rect = positioningPreview.getBoundingClientRect();
+                        
+                        // חישוב המיקום החדש
+                        let newX = ((e.clientX - rect.left - offsetX + sigPreview.offsetWidth / 2) / rect.width) * 100;
+                        let newY = ((e.clientY - rect.top - offsetY + sigPreview.offsetHeight / 2) / rect.height) * 100;
+                        
+                        // הגבלת המיקום בתוך הגבולות
+                        newX = Math.max(0, Math.min(100, newX));
+                        newY = Math.max(0, Math.min(100, newY));
+                        
+                        // עדכון המיקום
+                        sigPreview.style.left = newX + '%';
+                        sigPreview.style.top = newY + '%';
+                        
+                        // שמירת המיקום
+                        signaturePosition.x = newX;
+                        signaturePosition.y = newY;
+                        
+                        // עדכון הטקסט של המיקום
+                        positionValues.textContent = `${Math.round(newX)}% אופקי, ${Math.round(newY)}% אנכי`;
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+                
+                // עדכון הטקסט של המיקום
+                positionValues.textContent = `${Math.round(signaturePosition.x)}% אופקי, ${Math.round(signaturePosition.y)}% אנכי`;
+            }
+        }
+        
+        // עדכון תצוגת החתימה בהתאם לגודל
+        function updateSignaturePreview() {
+            const sigPreview = positioningPreview.querySelector('.draggable-signature');
+            if (sigPreview) {
+                sigPreview.style.maxWidth = signatureSize.value + '%';
+            }
+        }
+        
+        // החלת החתימה על התמונות
+        applyBtn.addEventListener('click', () => {
+            processedImages = [];
+            previewContainer.innerHTML = '';
+            
+            // הצגת סרגל התקדמות
+            progressBar.style.display = 'block';
+            progressBarFill.style.width = '0%';
+            
+            const size = signatureSize.value / 100;
+            
+            // עיבוד התמונות בצורה הדרגתית
+            processNextImage(0, size);
+        });
+        
+        // עיבוד התמונות בצורה הדרגתית
+        function processNextImage(index, size) {
+            if (index >= uploadedImages.length) {
+                // סיום העיבוד
+                progressBar.style.display = 'none';
+                
+                // הצגת כפתור "הורד הכל"
+                if (processedImages.length > 1) {
+                    downloadAllBtn.style.display = 'block';
+                }
+                
+                return;
+            }
+            
+            // עדכון סרגל ההתקדמות
+            const progress = (index / uploadedImages.length) * 100;
+            progressBarFill.style.width = progress + '%';
+            
+            const img = uploadedImages[index];
+            
+            // יצירת קנבס לעיבוד התמונה
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // הגדרת גודל הקנבס לגודל התמונה המקורית
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // ציור התמונה המקורית על הקנבס
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // חישוב גודל החתימה
+            const sigWidth = canvas.width * size;
+            const sigHeight = (sigWidth / signatureImage.width) * signatureImage.height;
+            
+            // חישוב המיקום לפי האחוזים שנבחרו
+            const sigX = (canvas.width * signaturePosition.x / 100) - (sigWidth / 2);
+            const sigY = (canvas.height * signaturePosition.y / 100) - (sigHeight / 2);
+            
+            // ציור החתימה על התמונה
+            ctx.drawImage(signatureImage, sigX, sigY, sigWidth, sigHeight);
+            
+            // שמירת התמונה המעובדת
+            const processedImage = {
+                canvas: canvas
+            };
+            processedImages.push(processedImage);
+            
+            // יצירת אלמנט תצוגה מקדימה
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            
+            // יצירת עותק מוקטן של הקנבס עבור התצוגה המקדימה
+            const previewCanvas = document.createElement('canvas');
+            const previewCtx = previewCanvas.getContext('2d');
+            
+            // הגדרת גודל קנבס התצוגה המקדימה
+            const maxPreviewSize = 200;
+            const scale = Math.min(maxPreviewSize / canvas.width, maxPreviewSize / canvas.height);
+            previewCanvas.width = canvas.width * scale;
+            previewCanvas.height = canvas.height * scale;
+            
+            // ציור התמונה המעובדת על קנבס התצוגה המקדימה
+            previewCtx.drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+            
+            previewItem.appendChild(previewCanvas);
+            
+            // כפתור הורדה - גרסה משופרת
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'download-btn';
+            downloadBtn.textContent = 'הורד תמונה';
+            downloadBtn.addEventListener('click', () => {
+                downloadFromCanvas(processedImage.canvas, `signed_image_${index + 1}.jpg`);
+            });
+            
+            previewItem.appendChild(downloadBtn);
+            previewContainer.appendChild(previewItem);
+            
+            // המשך לתמונה הבאה
+            setTimeout(() => {
+                processNextImage(index + 1, size);
+            }, 10);
+        }
+        
+        // הורדת כל התמונות בבת אחת - גרסה משופרת
+        downloadAllBtn.addEventListener('click', () => {
+            statusMessage.textContent = "מכין את התמונות להורדה...";
+            
+            // הורדת כל התמונות בהדרגה
+            downloadImagesSequentially(0);
+        });
+        
+        // הורדת תמונות באופן הדרגתי - גרסה משופרת
+        function downloadImagesSequentially(index) {
+            if (index >= processedImages.length) {
+                statusMessage.textContent = "כל התמונות הורדו בהצלחה!";
+                return;
+            }
+            
+            statusMessage.textContent = `מוריד תמונה ${index + 1} מתוך ${processedImages.length}...`;
+            
+            downloadFromCanvas(processedImages[index].canvas, `signed_image_${index + 1}.jpg`);
+            
+            // המשך לתמונה הבאה אחרי השהייה קצרה
+            setTimeout(() => {
+                downloadImagesSequentially(index + 1);
+            }, 1000); // השהייה של שנייה בין הורדות
+        }
+        
+        // פונקציית הורדה חדשה שמשתמשת בחלון חדש
+        function downloadFromCanvas(canvas, filename) {
+            // קידוד הקנבס ל-base64 (גרסה משופרת)
+            canvas.toBlob((blob) => {
+                // יצירת אובייקט URL מהבלוב
+                const url = URL.createObjectURL(blob);
+                
+                // פתיחת חלון חדש עם הקישור
+                const newWindow = window.open(url, '_blank');
+                
+                if (newWindow) {
+                    // הוספת JavaScript לחלון החדש כדי להוריד את התמונה
+                    newWindow.onload = function() {
+                        // יצירת אלמנט הורדה וקישור אליו
+                        const a = newWindow.document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        newWindow.document.body.appendChild(a);
+                        a.click();
+                        
+                        // סגירת החלון אחרי שנייה
+                        setTimeout(() => {
+                            newWindow.close();
+                            URL.revokeObjectURL(url);
+                        }, 1000);
+                    };
+                } else {
+                    // אם החלון נחסם, הצג הודעה
+                    alert("נראה שחלונות קופצים חסומים. אנא אפשר חלונות קופצים ונסה שוב.");
+                    infoModal.style.display = 'flex';
+                }
+            }, 'image/jpeg', 0.95);
+        }
+        
+        // פונקציה לטיפול בקבצי תמונה שהועלו
+        function handleImageFiles(files) {
+            if (files.length > 0) {
+                // נקה את התמונות הקודמות
+                uploadedImages = [];
+                previewContainer.innerHTML = '';
+                
+                // עדכון מונה התמונות
+                imageCounter.textContent = `נבחרו ${files.length} תמונות`;
+                
+                // עיבוד כל קובץ
+                Array.from(files).forEach(file => {
+                    if (file.type.match('image.*')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                uploadedImages.push(img);
+                                updateApplyButton();
+                            };
+                            img.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+        
+        // עדכון מצב כפתור החלת החתימה
+        function updateApplyButton() {
+            applyBtn.disabled = !(uploadedImages.length > 0 && signatureImage);
+        }
+    </script>
+</body>
+</html>
